@@ -1,6 +1,9 @@
 const express = require('express');
 const path = require('path');
+const connectDB = require('./config/connectDB');
 const app = express();
+
+connectDB();
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
