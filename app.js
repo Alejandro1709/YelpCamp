@@ -3,6 +3,7 @@ const path = require('path');
 const Campground = require('./models/Campground');
 const connectDB = require('./config/connectDB');
 const methodOverride = require('method-override');
+const morgan = require('morgan');
 const app = express();
 
 connectDB();
@@ -10,6 +11,8 @@ connectDB();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride('_method'));
+app.use(morgan('dev'));
+
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
