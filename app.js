@@ -123,10 +123,19 @@ app.get('/campgrounds/:id', async (req, res, next) => {
   }
 });
 
+// Unknown routes
+app.all('*', (req, res, next) => {
+  next(new AppError(404, 'Page Not Found!'));
+});
+
 // ERROR
 app.use((err, req, res, next) => {
-  const { status = 500, message = 'Something went wrong' } = err;
-  res.status(status).send(message);
+  const { status = 500 } = err;
+  if (!err.message) err.message = 'Oh No, Something Went Wrong!';
+
+  res.status(status).render('error', {
+    err,
+  });
 });
 
 app.listen(2001, () => console.log('Server is live at: http://localhost:2001'));
