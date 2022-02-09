@@ -5,6 +5,7 @@ const connectDB = require('./config/connectDB');
 const methodOverride = require('method-override');
 const ejsMate = require('ejs-mate');
 const morgan = require('morgan');
+const AppError = require('./utils/AppError');
 const app = express();
 
 connectDB();
@@ -23,61 +24,109 @@ app.get('/', (req, res) => {
   res.render('home');
 });
 // CAMPGROUNDS PAGE
-app.get('/campgrounds', async (req, res) => {
-  const campgrounds = await Campground.find();
+app.get('/campgrounds', async (req, res, next) => {
+  try {
+    const campgrounds = await Campground.find();
 
-  res.render('campgrounds/index', {
-    campgrounds,
-  });
+    res.render('campgrounds/index', {
+      campgrounds,
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 // NEW CAMPGROUND PAGE
 app.get('/campgrounds/new', (req, res) => {
   res.render('campgrounds/new');
 });
 // NEW CAMPGROUND ENDPOINT
-app.post('/campgrounds', async (req, res) => {
-  const campground = new Campground(req.body.campground);
-  await campground.save();
-  res.redirect(`/campgrounds/${campground._id}`);
+app.post('/campgrounds', async (req, res, next) => {
+  try {
+    const campground = new Campground(req.body.campground);
+    await campground.save();
+    res.redirect(`/campgrounds/${campground._id}`);
+  } catch (error) {
+    next(error);
+  }
 });
 
 // UPDATE CAMPGROUNDS PAGE
-app.get('/campgrounds/:id/edit', async (req, res) => {
-  const campground = await Campground.findById(req.params.id);
+app.get('/campgrounds/:id/edit', async (req, res, next) => {
+  try {
+    const campground = await Campground.findById(req.params.id);
 
-  res.render('campgrounds/edit', {
-    campground,
-  });
+    if (!campground) {
+      throw next(new AppError(404, 'This Campground does not exists!'));
+    }
+
+    res.render('campgrounds/edit', {
+      campground,
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 // UPDATE ENDPOINT ENDPOINT
-app.put('/campgrounds/:id', async (req, res) => {
-  const campground = await Campground.findByIdAndUpdate(
-    req.params.id,
-    {
-      ...req.body.campground,
-    },
-    {
-      new: true,
-      runValidators: true,
+app.put('/campgrounds/:id', async (req, res, next) => {
+  try {
+    const campground = await Campground.findByIdAndUpdate(
+      req.params.id,
+      {
+        ...req.body.campground,
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    if (!campground) {
+      throw next(new AppError(404, 'This Campground does not exists!'));
     }
-  );
-  res.redirect(`/campgrounds/${campground._id}`);
+
+    res.redirect(`/campgrounds/${campground._id}`);
+  } catch (error) {
+    next(error);
+  }
 });
 
 // DELETE CAMPGROUND
-app.delete('/campgrounds/:id', async (req, res) => {
-  await Campground.findByIdAndRemove(req.params.id);
-  res.redirect('/campgrounds');
+app.delete('/campgrounds/:id', async (req, res, next) => {
+  try {
+    const campground = await Campground.findByIdAndRemove(req.params.id);
+
+    if (!campground) {
+      throw next(new AppError(404, 'This Campground does not exists!'));
+    }
+
+    res.redirect('/campgrounds');
+  } catch (error) {
+    next(error);
+  }
 });
 
 // SINGLE CAMPGROUND PAGE
-app.get('/campgrounds/:id', async (req, res) => {
-  const campground = await Campground.findById(req.params.id);
+app.get('/campgrounds/:id', async (req, res, next) => {
+  try {
+    const campground = await Campground.findById(req.params.id);
 
-  res.render('campgrounds/show', {
-    campground,
-  });
+    if (!campground) {
+      throw next(new AppError(404, 'This Campground does not exists!'));
+    }
+
+    res.render('campgrounds/show', {
+      campground,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ERROR
+app.use((err, req, res, next) => {
+  const { status = 500, message = 'Something went wrong' } = err;
+  res.status(status).send(message);
 });
 
 app.listen(2001, () => console.log('Server is live at: http://localhost:2001'));
