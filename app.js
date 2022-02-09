@@ -5,6 +5,7 @@ const connectDB = require('./config/connectDB');
 const methodOverride = require('method-override');
 const ejsMate = require('ejs-mate');
 const morgan = require('morgan');
+const { campgroundSchema } = require('./schemas');
 const AppError = require('./utils/AppError');
 const app = express();
 
@@ -18,6 +19,17 @@ app.use(morgan('dev'));
 app.engine('ejs', ejsMate);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+
+const validateCampground = (req, res, next) => {
+  const { error } = campgroundSchema.validate(req.body);
+
+  if (error) {
+    const message = error.details.map((el) => el.message).join(',');
+    throw new AppError(400, message);
+  } else {
+    next();
+  }
+};
 
 // HOME PAGE
 app.get('/', (req, res) => {
@@ -40,7 +52,7 @@ app.get('/campgrounds/new', (req, res) => {
   res.render('campgrounds/new');
 });
 // NEW CAMPGROUND ENDPOINT
-app.post('/campgrounds', async (req, res, next) => {
+app.post('/campgrounds', validateCampground, async (req, res, next) => {
   try {
     const campground = new Campground(req.body.campground);
     await campground.save();
@@ -68,7 +80,7 @@ app.get('/campgrounds/:id/edit', async (req, res, next) => {
 });
 
 // UPDATE ENDPOINT ENDPOINT
-app.put('/campgrounds/:id', async (req, res, next) => {
+app.put('/campgrounds/:id', validateCampground, async (req, res, next) => {
   try {
     const campground = await Campground.findByIdAndUpdate(
       req.params.id,
