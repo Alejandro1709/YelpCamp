@@ -1,11 +1,12 @@
 const express = require('express');
 const path = require('path');
 const Campground = require('./models/Campground');
+const Review = require('./models/Review');
 const connectDB = require('./config/connectDB');
 const methodOverride = require('method-override');
 const ejsMate = require('ejs-mate');
 const morgan = require('morgan');
-const { campgroundSchema } = require('./schemas');
+const { campgroundSchema, reviewSchema } = require('./schemas');
 const AppError = require('./utils/AppError');
 const app = express();
 
@@ -22,6 +23,17 @@ app.set('views', path.join(__dirname, 'views'));
 
 const validateCampground = (req, res, next) => {
   const { error } = campgroundSchema.validate(req.body);
+
+  if (error) {
+    const message = error.details.map((el) => el.message).join(',');
+    throw new AppError(400, message);
+  } else {
+    next();
+  }
+};
+
+const validateReview = (req, res, next) => {
+  const { error } = reviewSchema.validate(req.body);
 
   if (error) {
     const message = error.details.map((el) => el.message).join(',');
@@ -106,7 +118,7 @@ app.put('/campgrounds/:id', validateCampground, async (req, res, next) => {
 // DELETE CAMPGROUND
 app.delete('/campgrounds/:id', async (req, res, next) => {
   try {
-    const campground = await Campground.findByIdAndRemove(req.params.id);
+    const campground = await Campground.findByIdAndDelete(req.params.id);
 
     if (!campground) {
       throw next(new AppError(404, 'This Campground does not exists!'));
@@ -121,7 +133,9 @@ app.delete('/campgrounds/:id', async (req, res, next) => {
 // SINGLE CAMPGROUND PAGE
 app.get('/campgrounds/:id', async (req, res, next) => {
   try {
-    const campground = await Campground.findById(req.params.id);
+    const campground = await Campground.findById(req.params.id).populate(
+      'reviews'
+    );
 
     if (!campground) {
       throw next(new AppError(404, 'This Campground does not exists!'));
@@ -130,6 +144,46 @@ app.get('/campgrounds/:id', async (req, res, next) => {
     res.render('campgrounds/show', {
       campground,
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// CREATE REVIEW ENDPOINT
+app.post('/campgrounds/:id/reviews', validateReview, async (req, res, next) => {
+  try {
+    const campground = await Campground.findById(req.params.id);
+
+    if (!campground) {
+      throw next(new AppError(404, 'This Campground does not exists!'));
+    }
+
+    const review = new Review(req.body.review);
+
+    campground.reviews.push(review);
+
+    await review.save();
+    await campground.save();
+
+    res.redirect(`/campgrounds/${campground._id}`);
+  } catch (error) {
+    next(error);
+  }
+});
+// DELETE REVIEW
+app.delete('/campgrounds/:id/reviews/:reviewId', async (req, res, next) => {
+  try {
+    const campground = await Campground.findByIdAndUpdate(req.params.id, {
+      $pull: { reviews: req.params.reviewId },
+    });
+
+    if (!campground) {
+      throw next(new AppError(404, 'This Campground does not exists!!'));
+    }
+
+    await Review.findByIdAndDelete(req.params.reviewId);
+
+    res.redirect(`/campgrounds/${req.params.id}`);
   } catch (error) {
     next(error);
   }
