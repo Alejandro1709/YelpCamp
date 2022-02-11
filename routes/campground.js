@@ -36,6 +36,7 @@ router.post('/', validateCampground, async (req, res, next) => {
   try {
     const campground = new Campground(req.body.campground);
     await campground.save();
+    req.flash('success', 'Successfully made a new campground!');
     res.redirect(`/campgrounds/${campground._id}`);
   } catch (error) {
     next(error);
@@ -46,9 +47,9 @@ router.post('/', validateCampground, async (req, res, next) => {
 router.get('/:id/edit', async (req, res, next) => {
   try {
     const campground = await Campground.findById(req.params.id);
-
     if (!campground) {
-      throw next(new AppError(404, 'This Campground does not exists!'));
+      req.flash('error', 'This Campground does not exists!');
+      return res.redirect('/campgrounds');
     }
 
     res.render('campgrounds/edit', {
@@ -77,6 +78,7 @@ router.put('/:id', validateCampground, async (req, res, next) => {
       throw next(new AppError(404, 'This Campground does not exists!'));
     }
 
+    req.flash('success', 'Successfully updated campground!');
     res.redirect(`/campgrounds/${campground._id}`);
   } catch (error) {
     next(error);
@@ -106,7 +108,8 @@ router.get('/:id', async (req, res, next) => {
     );
 
     if (!campground) {
-      throw next(new AppError(404, 'This Campground does not exists!'));
+      req.flash('error', 'This Campground does not exists!');
+      return res.redirect('/campgrounds');
     }
 
     res.render('campgrounds/show', {
