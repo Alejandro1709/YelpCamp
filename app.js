@@ -6,6 +6,7 @@ const ejsMate = require('ejs-mate');
 const dotenv = require('dotenv');
 const morgan = require('morgan');
 const session = require('express-session');
+const flash = require('connect-flash');
 const AppError = require('./utils/AppError');
 const campgroundRoutes = require('./routes/campground');
 const reviewRoutes = require('./routes/review');
@@ -16,21 +17,33 @@ dotenv.config();
 connectDB();
 
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
-app.use(methodOverride('_method'));
-app.use(morgan('dev'));
 app.use(
   session({
     secret: process.env.SESSION_SECRET,
     resave: false,
-    saveUninitialized: false,
+    saveUninitialized: true,
+    cookie: {
+      expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+      httpOnly: true,
+    },
   })
 );
+app.use(flash());
 
+app.use(methodOverride('_method'));
+app.use(morgan('dev'));
 app.engine('ejs', ejsMate);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+
+app.use((req, res, next) => {
+  res.locals.success = req.flash('success');
+  res.locals.error = req.flash('error');
+  next();
+});
 
 app.use('/campgrounds', campgroundRoutes);
 app.use('/campgrounds/:id/reviews', reviewRoutes);
