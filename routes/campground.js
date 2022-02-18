@@ -2,7 +2,7 @@ const express = require('express');
 const Campground = require('../models/Campground');
 const { campgroundSchema } = require('../schemas');
 const AppError = require('../utils/AppError');
-const isLoggedIn = require('../middlewares/authMiddleware');
+const { isLoggedIn, isAuthor } = require('../middlewares/authMiddleware');
 const router = express.Router();
 
 const validateCampground = (req, res, next) => {
@@ -46,7 +46,7 @@ router.post('/', isLoggedIn, validateCampground, async (req, res, next) => {
 });
 
 // UPDATE CAMPGROUNDS PAGE
-router.get('/:id/edit', isLoggedIn, async (req, res, next) => {
+router.get('/:id/edit', isLoggedIn, isAuthor, async (req, res, next) => {
   try {
     const campground = await Campground.findById(req.params.id);
     if (!campground) {
@@ -63,37 +63,47 @@ router.get('/:id/edit', isLoggedIn, async (req, res, next) => {
 });
 
 // UPDATE ENDPOINT ENDPOINT
-router.put('/:id', isLoggedIn, validateCampground, async (req, res, next) => {
-  try {
-    const campground = await Campground.findByIdAndUpdate(
-      req.params.id,
-      {
-        ...req.body.campground,
-      },
-      {
-        new: true,
-        runValidators: true,
+router.put(
+  '/:id',
+  isLoggedIn,
+  isAuthor,
+  validateCampground,
+  async (req, res, next) => {
+    try {
+      const campground = await Campground.findById(req.params.id);
+
+      if (!campground) {
+        req.flash('error', 'This Campground does not exists!');
+        return res.redirect('/campgrounds');
       }
-    );
 
-    if (!campground) {
-      throw next(new AppError(404, 'This Campground does not exists!'));
+      const campground = await Campground.findByIdAndUpdate(
+        req.params.id,
+        {
+          ...req.body.campground,
+        },
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
+
+      req.flash('success', 'Successfully updated campground!');
+      res.redirect(`/campgrounds/${campground._id}`);
+    } catch (error) {
+      next(error);
     }
-
-    req.flash('success', 'Successfully updated campground!');
-    res.redirect(`/campgrounds/${campground._id}`);
-  } catch (error) {
-    next(error);
   }
-});
+);
 
 // DELETE CAMPGROUND
-router.delete('/:id', isLoggedIn, async (req, res, next) => {
+router.delete('/:id', isLoggedIn, isAuthor, async (req, res, next) => {
   try {
     const campground = await Campground.findByIdAndDelete(req.params.id);
 
     if (!campground) {
-      throw next(new AppError(404, 'This Campground does not exists!'));
+      req.flash('error', 'This Campground does not exists!');
+      return res.redirect('/campgrounds');
     }
 
     res.redirect('/campgrounds');
