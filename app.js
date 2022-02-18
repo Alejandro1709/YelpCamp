@@ -10,6 +10,10 @@ const flash = require('connect-flash');
 const AppError = require('./utils/AppError');
 const campgroundRoutes = require('./routes/campground');
 const reviewRoutes = require('./routes/review');
+const userRoutes = require('./routes/user');
+const passport = require('passport');
+const LocalStrategy = require('passport-local');
+const User = require('./models/User');
 const app = express();
 
 dotenv.config();
@@ -31,20 +35,30 @@ app.use(
     },
   })
 );
-app.use(flash());
 
+app.use(flash());
 app.use(methodOverride('_method'));
 app.use(morgan('dev'));
 app.engine('ejs', ejsMate);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+app.use(passport.initialize());
+app.use(passport.session());
+
+passport.use(new LocalStrategy(User.authenticate()));
+
+passport.serializeUser(User.serializeUser());
+
+passport.deserializeUser(User.deserializeUser());
 
 app.use((req, res, next) => {
+  res.locals.currentUser = req.user;
   res.locals.success = req.flash('success');
   res.locals.error = req.flash('error');
   next();
 });
 
+app.use('/', userRoutes);
 app.use('/campgrounds', campgroundRoutes);
 app.use('/campgrounds/:id/reviews', reviewRoutes);
 
