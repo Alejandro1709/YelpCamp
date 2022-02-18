@@ -1,8 +1,11 @@
 const connectDB = require('../config/connectDB');
 const Campground = require('../models/Campground');
 const { places, descriptors } = require('../seeds/seedHelpers');
+const dotenv = require('dotenv');
 const cities = require('../seeds/cities');
 const mongoose = require('mongoose');
+
+dotenv.config();
 
 connectDB();
 
@@ -15,6 +18,7 @@ const seedDB = async () => {
     const random1000 = Math.floor(Math.random() * 1000);
     const price = Math.floor(Math.random() * 20) + 10;
     const camp = new Campground({
+      author: '620ee59cc973b4256f8446bd',
       location: `${cities[random1000].city}, ${cities[random1000].state}`,
       title: `${sample(descriptors)} ${sample(places)}`,
       image: 'https://source.unsplash.com/collection/483251',
