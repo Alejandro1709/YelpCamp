@@ -1,4 +1,5 @@
 const Campground = require('../models/Campground');
+const Review = require('../models/Review');
 
 const isLoggedIn = (req, res, next) => {
   if (!req.isAuthenticated()) {
@@ -18,7 +19,23 @@ const isAuthor = async (req, res, next) => {
       return res.redirect(`/campgrounds/${req.params.id}`);
     }
     next();
-  } catch (error) {}
+  } catch (error) {
+    next(error);
+  }
 };
 
-module.exports = { isLoggedIn, isAuthor };
+const isReviewAuthor = async (req, res, next) => {
+  try {
+    const review = await Review.findById(req.params.reviewId);
+
+    if (!review.author.equals(req.user._id)) {
+      req.flash('error', 'You do not have permission to do this...');
+      return res.redirect(`/campgrounds/${req.params.id}`);
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { isLoggedIn, isAuthor, isReviewAuthor };
