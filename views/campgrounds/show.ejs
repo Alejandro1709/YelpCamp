@@ -2,6 +2,7 @@
 <link rel="stylesheet" href="/css/stars.css" />
 <div class="row">
   <div class="col-6">
+    <div id='map' style='width: 400px; height: 300px;'></div>
     <div id="carouselExampleControls" class="carousel slide" data-bs-ride="carousel">
       <div class="carousel-inner">
         <% campground.images.forEach((image, index) => { %>
@@ -119,28 +120,10 @@
   </div>
 </div>
 
+
 <script>
-  // Example starter JavaScript for disabling form submissions if there are invalid fields
-  (function () {
-    'use strict';
-
-    // Fetch all the forms we want to apply custom Bootstrap validation styles to
-    const forms = document.querySelectorAll('.validated-form');
-
-    // Loop over them and prevent submission
-    Array.from(forms).forEach(function (form) {
-      form.addEventListener(
-        'submit',
-        function (event) {
-          if (!form.checkValidity()) {
-            event.preventDefault();
-            event.stopPropagation();
-          }
-
-          form.classList.add('was-validated');
-        },
-        false
-      );
-    });
-  })();
+  const mapToken = '<%-process.env.MAPBOX_TOKEN %>'
+  const campground = <%- JSON.stringify(campground) %>
 </script>
+
+<script src="/js/showMap.js"></script>

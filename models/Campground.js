@@ -1,17 +1,34 @@
 const mongoose = require('mongoose');
 const Review = require('../models/Review');
 
+const imageSchema = new mongoose.Schema({
+  url: String,
+  filename: String,
+});
+
+imageSchema.virtual('thumbnail').get(function () {
+  return this.url.replace('/upload', '/upload/w_200');
+});
+
 const campgroundSchema = new mongoose.Schema({
   title: String,
-  images: [
-    {
-      url: String,
-      filename: String,
-    },
-  ],
+  images: [imageSchema],
   price: Number,
   description: String,
-  location: String,
+  geometry: {
+    type: {
+      type: String,
+      enum: ['Point'],
+      required: true,
+    },
+    coordinates: {
+      type: [Number],
+      required: true,
+    },
+  },
+  location: {
+    type: String,
+  },
   author: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
