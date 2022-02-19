@@ -3,6 +3,9 @@ const campgroundController = require('../controllers/campground.controller');
 const { campgroundSchema } = require('../schemas');
 const AppError = require('../utils/AppError');
 const { isLoggedIn, isAuthor } = require('../middlewares/authMiddleware');
+const multer = require('multer');
+const { storage } = require('../cloudinary/index');
+const upload = multer({ storage });
 const router = express.Router();
 
 const validateCampground = (req, res, next) => {
@@ -19,7 +22,14 @@ const validateCampground = (req, res, next) => {
 router
   .route('/')
   .get(campgroundController.getCampgroundPage)
-  .post(isLoggedIn, validateCampground, campgroundController.createCampground);
+  .post(
+    isLoggedIn,
+    upload.array('image'),
+    validateCampground,
+    campgroundController.createCampground
+  );
+
+router.get('/new', isLoggedIn, campgroundController.getNewPage);
 
 router
   .route('/:id')
@@ -27,12 +37,11 @@ router
   .put(
     isLoggedIn,
     isAuthor,
+    upload.array('image'),
     validateCampground,
     campgroundController.updateCampground
   )
   .delete(isLoggedIn, isAuthor, campgroundController.deleteCampground);
-
-router.get('/new', isLoggedIn, campgroundController.getNewPage);
 
 router.get('/:id/edit', isLoggedIn, isAuthor, campgroundController.getEditPage);
 

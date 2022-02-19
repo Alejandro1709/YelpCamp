@@ -20,6 +20,10 @@ exports.getNewPage = (req, res) => {
 exports.createCampground = async (req, res, next) => {
   try {
     const campground = new Campground(req.body.campground);
+    campground.images = req.files.map((f) => ({
+      url: f.path,
+      filename: f.filename,
+    }));
     campground.author = req.user._id;
     await campground.save();
     req.flash('success', 'Successfully made a new campground!');
@@ -64,6 +68,15 @@ exports.updateCampground = async (req, res, next) => {
       req.flash('error', 'This Campground does not exists!');
       return res.redirect('/campgrounds');
     }
+
+    const images = req.files.map((f) => ({
+      url: f.path,
+      filename: f.filename,
+    }));
+
+    campground.images.push(...images);
+
+    await campground.save();
 
     req.flash('success', 'Successfully updated campground!');
     res.redirect(`/campgrounds/${campground._id}`);
