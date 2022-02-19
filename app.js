@@ -3,7 +3,6 @@ const path = require('path');
 const connectDB = require('./config/connectDB');
 const methodOverride = require('method-override');
 const ejsMate = require('ejs-mate');
-const dotenv = require('dotenv');
 const morgan = require('morgan');
 const session = require('express-session');
 const flash = require('connect-flash');
@@ -16,7 +15,7 @@ const LocalStrategy = require('passport-local');
 const User = require('./models/User');
 const app = express();
 
-dotenv.config();
+if (process.env.NODE_ENV !== 'production') require('dotenv').config();
 
 connectDB();
 
